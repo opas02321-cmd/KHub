@@ -46,7 +46,7 @@ c=signal:Connect(fn);links[#links+1]=c;return
 c
 end
 local
-settings={Catch=true,CatchPriority=true,CatchRescue=true,ManualAssist=false,Dodge=false,Start=false,Perfect=100,Throw=false,ThrowInput='자동',ThrowDelay=0.5,ThrowPerfect=100,ThrowLead=0,ThrowMaxHold=1.5,Fallback=true,PredictAuto=true,FallbackTime=0.10,Lead=0,DodgeTime=0.20,StartSeconds=8,AutoPing=true,PingShare=0.5,SpeedLead=true,SpeedBaseline=35,SpeedLeadPerStud=0.4,SpeedLeadMax=60,FallbackWithGauge=true}
+settings={Catch=true,CatchPriority=true,CatchRescue=true,ManualAssist=false,Dodge=false,Start=false,Perfect=100,Throw=false,ThrowInput='자동',ThrowDelay=0.05,ThrowPerfect=100,ThrowLead=0,ThrowMaxHold=1.5,Fallback=true,PredictAuto=true,FallbackTime=0.10,Lead=0,DodgeTime=0.20,StartSeconds=8,AutoPing=true,PingShare=0.5,SpeedLead=true,SpeedBaseline=35,SpeedLeadPerStud=0.4,SpeedLeadMax=60,FallbackWithGauge=true}
 local
 Rayfield=(function()
 local
@@ -18592,6 +18592,14 @@ end
 if
 perfect
 then
+if
+g.Y>=band[1]+(band[2]-band[1])*0.2
+and
+g.Y<=band[2]-(band[2]-band[1])*0.2
+then
+return
+true,'노란 구간'
+end
 local
 ready,delay=centerTiming(g,band,previous,g.Lead
 or
@@ -18848,7 +18856,7 @@ end
 local
 function
 resetThrow()
-stopThrow();throwState.Phase='idle';throwState.Acquired=nil;throwState.Started=nil
+stopThrow();throwState.Phase='idle';throwState.Acquired=nil;throwState.Started=nil;throwState.RetryCount=nil
 throwState.Previous=nil;throwState.Predicted=nil;throwState.At=nil
 throwState.ChargeValue=nil;throwState.ChargeAt=nil;throwState.ChargeSpeed=nil;throwState.ChargeRead=nil
 end
@@ -18901,7 +18909,7 @@ if
 not
 token
 then
-actionError=err;throwState.Phase='failed';say('자동 던지기 입력 실패 · 진단 확인');return
+actionError=err;throwState.RetryCount=(throwState.RetryCount or 0)+1;if throwState.RetryCount==1 then say('던지기 버튼 대기 중 · 재시도') end;if throwState.RetryCount>180 then throwState.Phase='failed';say('자동 던지기 입력 실패 · 진단 확인') end;return
 end
 throwState.Press=token;throwState.Phase='charging';throwState.Started=now
 scanUI()
@@ -19373,7 +19381,7 @@ local
 preferredCatchRoute=nil
 local
 function
-noteCatchRoute(pending,accepted)
+noteCatchRoute(pending,accepted,hard)
 local
 route=pending.Route
 or
@@ -19394,23 +19402,38 @@ end
 local
 evidence=catchRouteEvidence[route]
 or
-{Accepted=0,Missed=0};catchRouteEvidence[route]=evidence
+{Accepted=0,Total=0,HardFailures=0};catchRouteEvidence[route]=evidence
+evidence.Total=evidence.Total+1
 if
 accepted
 then
-evidence.Accepted=evidence.Accepted+1;evidence.Missed=0
-preferredCatchRoute=route
+evidence.Accepted=evidence.Accepted+1
 elseif
-evidence.Accepted>0
+hard
 then
-evidence.Missed=evidence.Missed+1
+evidence.HardFailures=(evidence.HardFailures
+or
+0)+1
+end
+if
+preferredCatchRoute==route
+then
+if
+evidence.Total>=4
+and
+evidence.Accepted/evidence.Total<0.4
+then
+preferredCatchRoute=nil
+end
+elseif
+evidence.Total>=4
+and
+evidence.Accepted/evidence.Total>=0.5
+then
+preferredCatchRoute=route
 end
 if
 preferredCatchRoute
-and
-(catchRouteEvidence[preferredCatchRoute].Missed
-or
-0)<3
 then
 for
 i,name
@@ -19424,7 +19447,25 @@ catchRouteIndex=i;return
 end
 end
 end
+for
+_=1,#catchRoutes
+do
 catchRouteIndex=catchRouteIndex%#catchRoutes+1
+local
+candidate=catchRoutes[catchRouteIndex]
+local
+ev=catchRouteEvidence[candidate]
+if
+not
+ev
+or
+(ev.HardFailures
+or
+0)<2
+then
+return
+end
+end
 end
 local
 catchStats={Attempts=0,Accepted=0,Unconfirmed=0,Possessions=0,WasHolding=false,ExpectedUntil=0,Last='대기',LastTiming='없음',TimerBlocked=0}
@@ -19553,7 +19594,7 @@ then
 if
 inputMode=='자동'
 then
-noteCatchRoute({Route=route},false)
+noteCatchRoute({Route=route},false,true)
 end
 lastCatch=now;return
 false
@@ -20798,7 +20839,7 @@ v[1]
 or
 v
 end})
-throwTab:CreateSlider({Name='공을 잡은 뒤 던지기 대기 (초)',Range={0,4},Increment=0.1,CurrentValue=0.5,Flag='DodgeThrowDelay',Callback=function(v)settings.ThrowDelay=math.clamp(tonumber(v)
+throwTab:CreateSlider({Name='공을 잡은 뒤 던지기 대기 (초)',Range={0,4},Increment=0.1,CurrentValue=0.05,Flag='DodgeThrowDelay',Callback=function(v)settings.ThrowDelay=math.clamp(tonumber(v)
 or
 0.5,0,4)end})
 throwTab:CreateSlider({Name='던지기 퍼펙트 시도 확률 (%)',Range={0,100},Increment=1,CurrentValue=100,Flag='DodgeThrowPerfect',Callback=function(v)settings.ThrowPerfect=math.clamp(tonumber(v)
