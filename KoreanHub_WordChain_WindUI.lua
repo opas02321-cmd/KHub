@@ -16048,9 +16048,10 @@ local WIKI=game:GetService('HttpService'):JSONDecode([===[{"attack":{"가걔":"a
 local rootSyllables,attackWords,defenseWords,killerStarts={},{},{},{}
 local function firstChar(w) local at=utf8.offset(w,2);return at and w:sub(1,at-1) or w end
 local function mergeWord(w)
+ if wordSet[w] then return end
  wordSet[w]=true
  local ch=firstChar(w);DICT[ch]=DICT[ch] or {}
- if not table.find(DICT[ch],w) then table.insert(DICT[ch],w) end
+ table.insert(DICT[ch],w)
 end
 for _,ch in ipairs(WIKI.roots) do rootSyllables[ch]=true end
 -- Game-specific route overrides; preserve all dictionary words.
@@ -16065,6 +16066,7 @@ for w,kind in pairs(WIKI.attack) do
 end
 for ch in string.gmatch('죽 락 낙 격 벽 창 형 착 턴 뚱 견 겸 곤 곶 괘 굉 굽 궁 궐 궤 규 균 급 긴 긍 깃 깐 깝 꽝 눙 섶 뉘 늬 댕 덕 돔 돗 둔 득 땀 또 륜 맛 멩 멱 면 멸 몽 뭉 뮈 밍','%S+') do killerStarts[ch]=nil end
 for w in string.gmatch('가죽 오락 승낙 성격 절벽 천창 유형 도착 패턴 뚱뚱 의견 빈곤 장산곶 팔괘 팔굽 고궁 대궐 궤도 법궤 법규 세균 계급 수긍 턴키 턴테이블 굿거리 굿판 굿당 굿놀이 굿쟁이 굿하다 씻김굿 별신굿 나라굿 마을굿 풍어굿 도당굿 대동굿 진혼굿 액막이굿 급수꾼 창꾼 몽꾼 나무꾼 사냥꾼 낚시꾼 장사꾼 구경꾼 일꾼 짐꾼 심부름꾼 지게꾼 소리꾼 춤꾼 씨름꾼 싸움꾼 술꾼 노름꾼 도박꾼 사기꾼 투전꾼 투기꾼 난봉꾼 이야기꾼 재주꾼 익살꾼 장난꾼 심술꾼 잔소리꾼 말썽꾼 염탐꾼 파수꾼 몰이꾼 망꾼 삯일꾼 품팔이꾼 농사꾼 머슴꾼 벌목꾼 채삼꾼 약초꾼 땅꾼 밀렵꾼 밀수꾼 도굴꾼 선소리꾼 상여꾼 가마꾼 마차꾼 배달꾼 모사꾼 놀이꾼 풍물꾼 풍각꾼 살림꾼 참견꾼 정치꾼','%S+') do mergeWord(w) end
+for w in string.gmatch('가슴벽 가운뎃손가락 건면 검색창 검은깨죽 고착 고초균 구두굽 귀리죽 기차창 나무젓가락 나선형 날개깃 납작당면 내벽 넓적당면 녹두죽 단호박죽 달걀죽 대젓가락 대칭축 대화창 동상이몽 둔각삼각형 뒤창 들깨죽 등땀 마름모형 매표창 물냉면 물맛 미역죽 반원형 방음벽 방호벽 방화벽 백일몽 버섯죽 보리죽 부착 불맛 비빔냉면 비빔면 사견 살모넬라균 새끼발가락 새끼손가락 새우죽 세포벽 소고기죽 소굽 손땀 손맛 쇠고기죽 쇠젓가락 안착 안창 알림창 야채죽 약손가락 어죽 열무냉면 예각삼각형 예지몽 외벽 우동면 원통형 유리창 유산균 유착 은젓가락 이등변삼각형 이마땀 이중창 자각몽 자리돔 장내세균 장축 저고리깃 전복죽 정삼각형 정육각형 정착 정팔각형 조개죽 좌우축 좌표축 줄돔 중급 중심축 중화면 지구축 차음벽 차창 참치죽 찹쌀죽 채소죽 채팅창 초급 초산균 코땀 콘크리트벽 콩땀 통창 팝업창 평양냉면 평행사변형 포도상구균 표시창 피땀 해몽 호박죽 회냉면 회전축 흙맛','%S+') do mergeWord(w) end
 for _,w in ipairs(WIKI.defense) do defenseWords[w]=true;mergeWord(w) end
 for _,w in ipairs(ROUTES) do mergeWord(w) end
 for _,w in ipairs(VIDEO_WORDS) do mergeWord(w) end
